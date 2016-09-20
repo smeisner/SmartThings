@@ -173,7 +173,6 @@ def doorOpened(evt) {
     } else {
         log.debug "Door closed -- descheduling callbacks"
         state.NotificationCount = 0
-        unschedule ("checkDoor")
         unschedule ("doorChecker")
     }
 }
