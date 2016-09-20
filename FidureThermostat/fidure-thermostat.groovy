@@ -4,10 +4,12 @@
  *	Author: Fidure
  *	Date: 2014-12-13
  *  Updated: 2016-1-29
+ *
+ *  Modified to remove support for cooling
  */
 metadata {
 	// Automatically generated. Make future change here.
-	definition (name: "Fidure ThermostatDev", namespace: "smartthings", author: "SmartThings") {
+	definition (name: "Fidure ThermostatDev [Modded]", namespace: "smartthings", author: "SmartThings") {
 
         capability "Actuator"
 		capability "Temperature Measurement"
@@ -19,8 +21,8 @@ metadata {
 
 		attribute "displayTemperature","number"
 		attribute "displaySetpoint", "string"
-		command 	"raiseSetpoint"
-		command 	"lowerSetpoint"
+		command   "raiseSetpoint"
+		command   "lowerSetpoint"
 		attribute "upButtonState", "string"
 		attribute "downButtonState", "string"
 
@@ -53,33 +55,33 @@ metadata {
      preferences {
 
 		input ("hold_time", "enum", title: "Default Hold Time in Hours",
-        description: "Default Hold Duration in hours",
-        range: "1..24", options: ["No Hold", "2 Hours", "4 Hours", "8 Hours", "12 Hours", "1 Day"],
-        displayDuringSetup: false)
+        	description: "Default Hold Duration in hours",
+        	range: "1..24", options: ["No Hold", "2 Hours", "4 Hours", "8 Hours", "12 Hours", "1 Day"],
+        	displayDuringSetup: false)
         input ("sync_clock", "boolean", title: "Synchronize Thermostat Clock Automatically?", options: ["Yes","No"])
         input ("lock_level", "enum", title: "Thermostat Screen Lock Level", options: ["Full","Mode Only", "Setpoint"])
  	}
 
 	tiles {
 		valueTile("temperature", "displayTemperature", width: 2, height: 2) {
-			state("temperature", label:'${currentValue}째', unit:"F",
+			state("temperature", label:'${currentValue}�', unit:"F",
 				backgroundColors:[
-        [value: 0, color: "#153591"],
-				[value: 7, color: "#1e9cbb"],
-				[value: 15, color: "#90d2a7"],
-				[value: 23, color: "#44b621"],
-				[value: 29, color: "#f1d801"],
-				[value: 35, color: "#d04e00"],
-				[value: 36, color: "#bc2323"],
-									// fahrenheit range
-				[value: 37, color: "#153591"],
-				[value: 44, color: "#1e9cbb"],
-				[value: 59, color: "#90d2a7"],
-				[value: 74, color: "#44b621"],
-				[value: 84, color: "#f1d801"],
-				[value: 95, color: "#d04e00"],
-				[value: 96, color: "#bc2323"]
-        ]
+                    [value: 0, color: "#153591"],
+					[value: 7, color: "#1e9cbb"],
+					[value: 15, color: "#90d2a7"],
+					[value: 23, color: "#44b621"],
+					[value: 29, color: "#f1d801"],
+					[value: 35, color: "#d04e00"],
+					[value: 36, color: "#bc2323"],
+					// fahrenheit range
+					[value: 37, color: "#153591"],
+					[value: 44, color: "#1e9cbb"],
+					[value: 59, color: "#90d2a7"],
+					[value: 74, color: "#44b621"],
+					[value: 84, color: "#f1d801"],
+					[value: 95, color: "#d04e00"],
+					[value: 96, color: "#bc2323"]
+        		]
 			)
 		}
 		standardTile("mode", "device.thermostatMode", inactiveLabel: false, decoration: "flat") {
@@ -94,35 +96,37 @@ metadata {
 			state "fanOn", label:'${name}', action:"thermostat.setThermostatFanMode"
 		}
 
-    standardTile("hvacStatus", "thermostatOperatingState", inactiveLabel: false, decoration: "flat") {
+	    standardTile("hvacStatus", "thermostatOperatingState", inactiveLabel: false, decoration: "flat") {
 				state "Resting",  label: 'Resting'
 				state "Heating",  icon:"st.thermostat.heating"
 				state "Cooling",  icon:"st.thermostat.cooling"
 		}
 
 
-    standardTile("lock", "lockLevel", inactiveLabel: false, decoration: "flat") {
-        state "Unlocked",   action:"lock", label:'${name}'
-        state "Mode Only",  action:"lock", label:'${name}'
-        state "Setpoint",   action:"lock", label:'${name}'
-        state "Full",  action:"lock", label:'${name}'
-    }
+	    standardTile("lock", "lockLevel", inactiveLabel: false, decoration: "flat") {
+    	    state "Unlocked",   action:"lock", label:'${name}'
+        	state "Mode Only",  action:"lock", label:'${name}'
+        	state "Setpoint",   action:"lock", label:'${name}'
+        	state "Full",  action:"lock", label:'${name}'
+    	}
 
 		controlTile("heatSliderControl", "device.heatingSetpoint", "slider", height: 1, width: 2, inactiveLabel: false, range: "$min..$max") {
 			state "setHeatingSetpoint", action:"thermostat.setHeatingSetpoint", backgroundColor:"#d04e00"
 		}
 		valueTile("heatingSetpoint", "device.heatingSetpoint", inactiveLabel: false, decoration: "flat") {
-			state "heat", label:'${currentValue}째 heat', unit:"F", backgroundColor:"#ffffff"
+			state "heat", label:'${currentValue}� heat', unit:"F", backgroundColor:"#ffffff"
 		}
-		controlTile("coolSliderControl", "device.coolingSetpoint", "slider", height: 1, width: 2, inactiveLabel: false, range: "$min..$max") {
-			state "setCoolingSetpoint", action:"thermostat.setCoolingSetpoint", backgroundColor: "#1e9cbb"
-		}
-		valueTile("coolingSetpoint", "device.coolingSetpoint", inactiveLabel: false, decoration: "flat") {
-			state "cool", label:'${currentValue}째 cool', unit:"F", backgroundColor:"#ffffff"
-		}
+//		controlTile("coolSliderControl", "device.coolingSetpoint", "slider", height: 1, width: 2, inactiveLabel: false, range: "$min..$max") {
+//			state "setCoolingSetpoint", action:"thermostat.setCoolingSetpoint", backgroundColor: "#1e9cbb"
+//		}
+//		valueTile("coolingSetpoint", "device.coolingSetpoint", inactiveLabel: false, decoration: "flat") {
+//			state "cool", label:'${currentValue}� cool', unit:"F", backgroundColor:"#ffffff"
+//		}
+
 		standardTile("refresh", "device.temperature", inactiveLabel: false, decoration: "flat") {
 			state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
+
 		standardTile("configure", "device.configure", inactiveLabel: false, decoration: "flat") {
 			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
 		}
@@ -130,6 +134,7 @@ metadata {
         valueTile("scheduleText", "prorgammingOperation", inactiveLabel: false, decoration: "flat", width: 2) {
         	state "default", label: 'Schedule'
     	}
+
     	valueTile("schedule", "prorgammingOperationDisplay", inactiveLabel: false, decoration: "flat") {
         	state "default", action:"Program", label: '${currentValue}'
     	}
@@ -140,7 +145,7 @@ metadata {
 
 		valueTile("setpoint", "displaySetpoint", width: 2, height: 2)
 		{
-			state("displaySetpoint", label: '${currentValue}째',
+			state("displaySetpoint", label: '${currentValue}�',
 				backgroundColor: "#919191")
 		}
 
@@ -153,10 +158,11 @@ metadata {
 			state "pressed", action:"lowerSetpoint", backgroundColor:"#ff9191", icon:"st.thermostat.thermostat-down"
 		}
 
-
 		main "temperature"
-		details([ "temperature", "mode", "hvacStatus","setpoint","upButton","downButton","scheduleText", "schedule", "hold",
-        "heatSliderControl", "heatingSetpoint","coolSliderControl", "coolingSetpoint", "lock", "refresh", "configure"])
+//		details([ "temperature", "mode", "hvacStatus","setpoint","upButton","downButton","scheduleText", "schedule", "hold",
+//	        "heatSliderControl", "heatingSetpoint","coolSliderControl", "coolingSetpoint", "lock", "refresh", "configure"])
+		details([ "temperature", "mode", "hvacStatus","setpoint","upButton","downButton",
+        	"heatSliderControl", "heatingSetpoint", "hold", "lock", "refresh", "configure"])
 	}
 }
 
@@ -650,20 +656,20 @@ def readAttributesCommand(cluster, attribList)
 def refresh()
 {
 	log.debug "refresh called"
-     // log.trace "list: " +       readAttributesCommand(0x201, [0x1C,0x1E,0x23])
+     // log.trace "list: " + readAttributesCommand(0x201, [0x1C,0x1E,0x23])
 
-        readAttributesCommand(0x201, [0x00,0x11,0x12]) +
-        readAttributesCommand(0x201, [0x1C,0x1E,0x23]) +
-        readAttributesCommand(0x201, [0x24,0x25,0x29]) +
-        [
+    readAttributesCommand(0x201, [0x00,0x11,0x12]) +
+    readAttributesCommand(0x201, [0x1C,0x1E,0x23]) +
+    readAttributesCommand(0x201, [0x24,0x25,0x29]) +
+    [
 	    "st rattr 0x${device.deviceNetworkId} 1 0x204 0x01", "delay 200",  // lock status
         "raw 0x201 {04 21 11 00 00 05 00 }"                , "delay 500",  // hold expiary
 	    "send 0x${device.deviceNetworkId} 1 1"             , "delay 1500",
-		]  + checkLastTimeSync(2000)
+	]  + checkLastTimeSync(2000)
+
+	log.debug "setting time"
+    setThermostatTime()
 }
-
-
-
 
 def poll() {
 	log.trace "poll called"
@@ -700,7 +706,8 @@ def setCoolingSetpoint(degrees) {
 }
 
 def modes() {
-	["off", "heat", "cool"]
+//	["off", "heat", "cool"]
+	["off", "heat"]
 }
 
 def setThermostatFanMode() {
@@ -768,7 +775,6 @@ def fanOn() {
 	"st wattr 0x${device.deviceNetworkId} 1 0x202 0 0x30 {04}"
 }
 
-
 def fanAuto() {
 	 sendEvent("name":"thermostatFanMode", "value":"fanAuto")
 	"st wattr 0x${device.deviceNetworkId} 1 0x202 0 0x30 {05}"
@@ -778,12 +784,10 @@ def updated()
 {
 	def lastSync = device.currentState("lastTimeSync")?.value
 	if ((settings.sync_clock ?: false) == false)
-			{
-            	log.debug "resetting last sync time.  Used to be: $lastSync"
-                sendEvent("name":"lastTimeSync", "value":"${new Date(0)}")
-
-      }
-
+	{
+        log.debug "resetting last sync time.  Used to be: $lastSync"
+        sendEvent("name":"lastTimeSync", "value":"${new Date(0)}")
+    }
 }
 
 def getLockMap()
@@ -794,25 +798,22 @@ def getLockMap()
   "03":"Full",
   "04":"Full",
   "05":"Full",
-
 ]}
+
 def lock()
 {
+    def currentLock = device.currentState("lockLevel")?.value
+    def val = getLockMap().find { it.value == currentLock }?.key
 
-	def currentLock = device.currentState("lockLevel")?.value
-  def val = getLockMap().find { it.value == currentLock }?.key
+    //log.debug "current lock is: ${val}"
 
+    if (val == "00")
+        val = getLockMap().find { it.value == (settings.lock_level ?: "Unlocked") }?.key
+    else
+        val = "00"
 
-
-  //log.debug "current lock is: ${val}"
-
-  if (val == "00")
-      val = getLockMap().find { it.value == (settings.lock_level ?: "Unlocked") }?.key
-  else
-      val = "00"
-
-  ["st wattr 0x${device.deviceNetworkId} 1 0x204 1 0x30 {${val}}",
-   "st rattr 0x${device.deviceNetworkId} 1 0x204 0x01", "delay 500"]
+    ["st wattr 0x${device.deviceNetworkId} 1 0x204 1 0x30 {${val}}",
+     "st rattr 0x${device.deviceNetworkId} 1 0x204 0x01", "delay 500"]
 }
 
 
@@ -830,7 +831,7 @@ def setThermostatTime()
 
 	long millis = date.getTime(); // Millis since Unix epoch
   	millis -= 946684800000;  // adjust for ZigBee EPOCH
-  // adjust for time zone and DST offset
+    // adjust for time zone and DST offset
 	millis += location.timeZone.getOffset(date.getTime());
 	//convert to seconds
 	millis /= 1000;
@@ -849,31 +850,31 @@ def setThermostatTime()
 def configure() {
 
  	[
-			"zdo bind 0x${device.deviceNetworkId} 1 1 0x201 {${device.zigbeeId}} {}", "delay 500",
+        "zdo bind 0x${device.deviceNetworkId} 1 1 0x201 {${device.zigbeeId}} {}", "delay 500",
 
-            "zcl global send-me-a-report 0x201 0x0000 0x29 20 300 {19 00}",  // report temperature changes over 0.2C
-  		    "send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 500",
+        "zcl global send-me-a-report 0x201 0x0000 0x29 20 300 {19 00}",  // report temperature changes over 0.2C
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 500",
 
-            "zcl global send-me-a-report 0x201 0x001C 0x30 10 305 { }",  // mode
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
+        "zcl global send-me-a-report 0x201 0x001C 0x30 10 305 { }",  // mode
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
 
-            "zcl global send-me-a-report 0x201 0x0025 0x18 10 310 { 00 }",  // schedule on/off
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
+        "zcl global send-me-a-report 0x201 0x0025 0x18 10 310 { 00 }",  // schedule on/off
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
 
-            "zcl global send-me-a-report 0x201 0x001E 0x30 10 315 { 00 }",  // running mode
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
+        "zcl global send-me-a-report 0x201 0x001E 0x30 10 315 { 00 }",  // running mode
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
 
-            "zcl global send-me-a-report 0x201 0x0011 0x29 10 320 {32 00}",  // cooling setpoint delta: 0.5C (0x3200 in little endian)
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
+        "zcl global send-me-a-report 0x201 0x0011 0x29 10 320 {32 00}",  // cooling setpoint delta: 0.5C (0x3200 in little endian)
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
 
-            "zcl global send-me-a-report 0x201 0x0012 0x29 10 320 {32 00}", // cooling setpoint delta: 0.5C (0x3200 in little endian)
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
+        "zcl global send-me-a-report 0x201 0x0012 0x29 10 320 {32 00}", // cooling setpoint delta: 0.5C (0x3200 in little endian)
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
 
-            "zcl global send-me-a-report 0x201 0x0029 0x19 10 325 { 00 }", "delay 200",  // relay status
-			"send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
+        "zcl global send-me-a-report 0x201 0x0029 0x19 10 325 { 00 }", "delay 200",  // relay status
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 500",
 
-            "zcl global send-me-a-report 0x201 0x0023 0x30 10 330 { 00 }", 		// hold
-            "send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 1500",
+        "zcl global send-me-a-report 0x201 0x0023 0x30 10 330 { 00 }", 		// hold
+        "send 0x${device.deviceNetworkId} 1 ${endpointId}","delay 1500",
 
 	] + refresh()
 }
