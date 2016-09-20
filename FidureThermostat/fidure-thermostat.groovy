@@ -6,10 +6,11 @@
  *  Updated: 2016-1-29
  *
  *  Modified to remove support for cooling
+ *  Modified to synch clock on refresh
  */
 metadata {
 	// Automatically generated. Make future change here.
-	definition (name: "Fidure ThermostatDev [Modded]", namespace: "smartthings", author: "SmartThings") {
+	definition (name: "Fidure Thermostat", namespace: "smartthings", author: "SmartThings") {
 
         capability "Actuator"
 		capability "Temperature Measurement"
@@ -213,8 +214,7 @@ def parse(String description) {
 	            case "0000":
 	  						map.name = "temperature"
 	  						map.value = getTemperature(atMap.value)
-								result += createEvent("name":"displayTemperature", "value":
-								getDisplayTemperature(atMap.value))
+								result += createEvent("name":"displayTemperature", "value":	getDisplayTemperature(atMap.value))
 	  					break;
 	            case "0005":
 	            //log.debug "hex time: ${descMap.value}"
@@ -385,13 +385,14 @@ def updateSetpoint(attrib, val)
 
 	def value = '--';
 
-	if (("heat"  == mode && heat != null) ||
-    	("auto" == mode && runningMode == "heat" && heat != null))
-        	value = (attrib == "heatingSetpoint")? val : heat;
-	else if (("cool"  == mode && cool != null) || ("auto" == mode && runningMode == "cool" && cool != null))
-    	value = (attrib == "coolingSetpoint")? val : cool;
-
-
+	if ("heat"  == mode && heat != null)
+		value = heat;
+	else if ("cool"  == mode && cool != null)
+		value = cool;
+    else if ("auto" == mode && runningMode == "cool" && cool != null)
+    	value = cool;
+    else if ("auto" == mode && runningMode == "heat" && heat != null)
+    	value = heat;
 
 	sendEvent("name":"displaySetpoint", "value": value)
 }
@@ -571,7 +572,7 @@ def convertToTime(data)
 	def time = Integer.parseInt("$data", 16) as long;
     time *= 1000;
     time += 946684800000; // 481418694
-    time -= location.timeZone.getOffset(date.getTime());
+    time -= location.timeZone.getRawOffset() + location.timeZone.getDSTSavings();
 
     def d = new Date(time);
 
@@ -617,14 +618,11 @@ def checkLastTimeSync(delay)
     if (!lastSync)
     	lastSync = "${new Date(0)}"
 
-	if (!settings.sync_clock)
-	{
-		if (lastSync != new Date(0))
-		{
-			sendEvent("name":"lastTimeSync", "value":"${new Date(0)}")
-		}
-		return []
-	}
+    if (settings.sync_clock ?: false && lastSync != new Date(0))
+    	{
+        	sendEvent("name":"lastTimeSync", "value":"${new Date(0)}")
+    	}
+
 
 	long duration = (new Date()).getTime() - (new Date(lastSync)).getTime()
 
@@ -667,7 +665,7 @@ def refresh()
 	    "send 0x${device.deviceNetworkId} 1 1"             , "delay 1500",
 	]  + checkLastTimeSync(2000)
 
-	log.debug "setting time"
+	log.debug "Updating thermostat time"
     setThermostatTime()
 }
 
@@ -690,7 +688,7 @@ def setHeatingSetpoint(degrees) {
 	def temperatureScale = getTemperatureScale()
 
 	def degreesInteger = degrees as Integer
-	sendEvent("name":"heatingSetpoint", "value":degreesInteger)
+	sendEvent("name":"heatingSetpoint", "value":degreesInteger, "unit":temperatureScale)
 
 	def celsius = (getTemperatureScale() == "C") ? degreesInteger : (fahrenheitToCelsius(degreesInteger) as Double).round(2)
 	"st wattr 0x${device.deviceNetworkId} 1 0x201 0x12 0x29 {" + hex(celsius*100) + "}"
@@ -699,7 +697,7 @@ def setHeatingSetpoint(degrees) {
 
 def setCoolingSetpoint(degrees) {
 	def degreesInteger = degrees as Integer
-	sendEvent("name":"coolingSetpoint", "value":degreesInteger)
+	sendEvent("name":"coolingSetpoint", "value":degreesInteger, "unit":temperatureScale)
 	def celsius = (getTemperatureScale() == "C") ? degreesInteger : (fahrenheitToCelsius(degreesInteger) as Double).round(2)
 	"st wattr 0x${device.deviceNetworkId} 1 0x201 0x11 0x29 {" + hex(celsius*100) + "}"
 
@@ -723,7 +721,7 @@ def setThermostatFanMode() {
 			returnCommand = fanAuto()
 			break
 	}
-	if(!currentFanMode) { returnCommand = fanAuto() }
+	if (!currentFanMode) { returnCommand = fanAuto() }
 	returnCommand
 }
 
@@ -798,6 +796,7 @@ def getLockMap()
   "03":"Full",
   "04":"Full",
   "05":"Full",
+
 ]}
 
 def lock()
@@ -808,19 +807,18 @@ def lock()
     //log.debug "current lock is: ${val}"
 
     if (val == "00")
-        val = getLockMap().find { it.value == (settings.lock_level ?: "Unlocked") }?.key
+        val = getLockMap().find { it.value == (settings.lock_level ?: "Full") }?.key
     else
         val = "00"
 
-    ["st wattr 0x${device.deviceNetworkId} 1 0x204 1 0x30 {${val}}",
-     "st rattr 0x${device.deviceNetworkId} 1 0x204 0x01", "delay 500"]
+    "st rattr 0x${device.deviceNetworkId} 1 0x204 0x01"
 }
 
 
 def setThermostatTime()
 {
 
-  if (false == (settings.sync_clock ?: false))
+	if ((settings.sync_clock ?: false))
     {
       log.debug "sync time is disabled, leaving"
       return []
@@ -832,7 +830,7 @@ def setThermostatTime()
 	long millis = date.getTime(); // Millis since Unix epoch
   	millis -= 946684800000;  // adjust for ZigBee EPOCH
     // adjust for time zone and DST offset
-	millis += location.timeZone.getOffset(date.getTime());
+	millis += location.timeZone.getRawOffset() + location.timeZone.getDSTSavings();
 	//convert to seconds
 	millis /= 1000;
 
