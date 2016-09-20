@@ -52,9 +52,8 @@ metadata {
 
 	// simulator metadata
 	simulator { }
-  // pref
-     preferences {
-
+    // pref
+    preferences {
 		input ("hold_time", "enum", title: "Default Hold Time in Hours",
         	description: "Default Hold Duration in hours",
         	range: "1..24", options: ["No Hold", "2 Hours", "4 Hours", "8 Hours", "12 Hours", "1 Day"],
@@ -170,10 +169,10 @@ metadata {
 def getMin() {
 	try
 	{
-	if (getTemperatureScale() == "C")
-	 	return 10
-	else
-		return 50
+		if (getTemperatureScale() == "C")
+		 	return 10
+		else
+			return 50
 	} catch (all)
 	{
 		return 10
@@ -183,9 +182,9 @@ def getMin() {
 def getMax() {
 	try {
 		if (getTemperatureScale() == "C")
-		return 30
-	else
-		return 86
+			return 30
+		else
+			return 86
 	} catch (all)
 	{
 		return 86
@@ -198,7 +197,6 @@ def parse(String description) {
 	def result = []
 
 	if (description?.startsWith("read attr -")) {
-
 		//TODO: Parse RAW strings for multiple attributes
 		def descMap = parseDescriptionAsMap(description)
 		log.debug "Desc Map: $descMap"
@@ -206,136 +204,136 @@ def parse(String description) {
 		{
 			def map = [:]
 
-		  if (descMap.cluster == "0201")
+			if (descMap.cluster == "0201")
 			{
 				//log.trace "attribute: ${atMap.attrId} "
                 switch(atMap.attrId.toLowerCase())
 				{
-	            case "0000":
-	  						map.name = "temperature"
-	  						map.value = getTemperature(atMap.value)
-								result += createEvent("name":"displayTemperature", "value":	getDisplayTemperature(atMap.value))
-	  					break;
-	            case "0005":
-	            //log.debug "hex time: ${descMap.value}"
-	            	if (atMap.encoding ==  "23")
-	                {
-	            	    	map.name = "holdExpiary"
-	                  	map.value = "${convertToTime(atMap.value).getTime()}"
-	                    //log.trace "HOLD EXPIRY: ${atMap.value} is ${map.value}"
-	                    updateHoldLabel("HoldExp", "${map.value}")
-	  				}
-	            break;
-	  				  case "0011":
-	  						map.name = "coolingSetpoint"
-	  						map.value = getDisplayTemperature(atMap.value)
-								updateSetpoint(map.name,map.value)
-	  					break;
-	  					case "0012":
-	  						map.name = "heatingSetpoint"
-	  						map.value = getDisplayTemperature(atMap.value)
-							updateSetpoint(map.name,map.value)
-	  					break;
-	  					case "001c":
-                        	map.name = "thermostatMode"
-	  						map.value = getModeMap()[atMap.value]
-							updateSetpoint(map.name,map.value)
-	  					break;
-							case "001e":   //running mode enum8
-			          			map.name = "runningMode"
-								map.value = getModeMap()[atMap.value]
-								updateSetpoint(map.name,map.value)
-							break;
-	            case "0023":   // setpoint hold enum8
-	            map.name = "setpointHold"
-	            map.value = getHoldMap()[atMap.value]
-	            updateHoldLabel("Hold", map.value)
-	            break;
-	            case "0024":   // hold duration int16u
-	            map.name = "setpointHoldDuration"
-	            map.value = Integer.parseInt("${atMap.value}", 16)
+					case "0000":
+						map.name = "temperature"
+						map.value = getTemperature(atMap.value)
+						result += createEvent("name":"displayTemperature", "value":	getDisplayTemperature(atMap.value))
+						break;
+					case "0005":
+						//log.debug "hex time: ${descMap.value}"
+						if (atMap.encoding ==  "23")
+						{
+							map.name = "holdExpiary"
+							map.value = "${convertToTime(atMap.value).getTime()}"
+							//log.trace "HOLD EXPIRY: ${atMap.value} is ${map.value}"
+							updateHoldLabel("HoldExp", "${map.value}")
+						}
+						break;
+					case "0011":
+						map.name = "coolingSetpoint"
+						map.value = getDisplayTemperature(atMap.value)
+						updateSetpoint(map.name,map.value)
+						break;
+					case "0012":
+						map.name = "heatingSetpoint"
+						map.value = getDisplayTemperature(atMap.value)
+						updateSetpoint(map.name,map.value)
+						break;
+					case "001c":
+						map.name = "thermostatMode"
+						map.value = getModeMap()[atMap.value]
+						updateSetpoint(map.name,map.value)
+						break;
+					case "001e":   //running mode enum8
+						map.name = "runningMode"
+						map.value = getModeMap()[atMap.value]
+						updateSetpoint(map.name,map.value)
+						break;
+					case "0023":   // setpoint hold enum8
+						map.name = "setpointHold"
+						map.value = getHoldMap()[atMap.value]
+						updateHoldLabel("Hold", map.value)
+						break;
+					case "0024":   // hold duration int16u
+						map.name = "setpointHoldDuration"
+						map.value = Integer.parseInt("${atMap.value}", 16)
+						break;
+					case "0025":   // thermostat programming operation bitmap8
+						map.name = "programmingOperation"
+						def val = getProgrammingMap()[Integer.parseInt("${atMap.value}", 16) & 0x01]
+						result += createEvent("name":"prorgammingOperationDisplay", "value": val)
+						map.value = atMap.value
+						break;
+					case "0029":
+						// relay state
+						map.name = "thermostatOperatingState"
+						map.value = getThermostatOperatingState(atMap.value)
+						break;
+				}
+		    } 
+		    else if (descMap.cluster == "0204")
+			{
+				if (atMap.attrId == "0001")
+				{
+					map.name = "lockLevel"
+					map.value = getLockMap()[atMap.value]
+				}
+			}
 
-	            break;
-	            case "0025":   // thermostat programming operation bitmap8
-	  					map.name = "prorgammingOperation"
-	                      def val = getProgrammingMap()[Integer.parseInt("${atMap.value}", 16) & 0x01]
-	  					result += createEvent("name":"prorgammingOperationDisplay", "value": val)
-	            map.value = atMap.value
-	  					break;
-	            case "0029":
-								// relay state
-	              map.name = "thermostatOperatingState"
-	              map.value = getThermostatOperatingState(atMap.value)
-	            break;
-	      }
-	    } else if (descMap.cluster == "0204")
-	    {
-	      if (atMap.attrId == "0001")
-	      {
-	  			map.name = "lockLevel"
-                map.value = getLockMap()[atMap.value]
-	      }
-	    }
-
-		 if (map) {
-            result += createEvent(map)
- 	 	 }
-	  }
-  }
+			if (map) {
+				result += createEvent(map)
+			}
+		}
+	}
 
 	log.debug "Parse returned $result"
 	return result
 }
 
 def parseDescriptionAsMap(description) {
-  def map = (description - "read attr - ").split(",").inject([:]) { map, param ->
-  def nameAndValue = param.split(":")
-  map += [(nameAndValue[0].trim()):nameAndValue[1].trim()]
-  }
+	def map = (description - "read attr - ").split(",").inject([:]) {
+		map, param -> def nameAndValue = param.split(":")
+		map += [(nameAndValue[0].trim()):nameAndValue[1].trim()]
+	}
 
-    def attrId = map.get('attrId')
-    def encoding = map.get('encoding')
-    def value = map.get('value')
-    def result = map.get('result')
-    def list = [];
+	def attrId = map.get('attrId')
+	def encoding = map.get('encoding')
+	def value = map.get('value')
+	def result = map.get('result')
+	def list = [];
 
-  if (getDataLengthByType(map.get('encoding')) < map.get('value').length()) {
-    def raw = map.get('raw')
+	if (getDataLengthByType(map.get('encoding')) < map.get('value').length()) {
+		def raw = map.get('raw')
 
-    def size = Long.parseLong(''+ map.get('size'), 16)
-    def index = 12;
-    def len
+		def size = Long.parseLong(''+ map.get('size'), 16)
+		def index = 12;
+		def len
 
-    //log.trace "processing multi attributes"
-    while((index-12) < size) {
-       attrId = flipHexStringEndianness(raw[index..(index+3)])
-       index+= 4;
-       if (result == "success")
-       index+=2;
-       encoding = raw[index..(index+1)]
-       index+= 2;
-       len =getDataLengthByType(encoding)
-       value = flipHexStringEndianness(raw[index..(index+len-1)])
-       index+=len;
-       list += ['attrId': "$attrId", 'encoding':"$encoding", 'value': "$value"]
-    }
-  }
-  else
-    list += ['attrId': "$attrId", 'encoding': "$encoding", 'value': "$value"]
+		//log.trace "processing multi attributes"
+		while((index-12) < size) {
+			attrId = flipHexStringEndianness(raw[index..(index+3)])
+			index += 4;
+			if (result == "success")
+				index += 2;
+			encoding = raw[index..(index+1)]
+			index += 2;
+			len = getDataLengthByType(encoding)
+			value = flipHexStringEndianness(raw[index..(index+len-1)])
+			index += len;
+			list += ['attrId': "$attrId", 'encoding':"$encoding", 'value': "$value"]
+		}
+	}
+	else
+		list += ['attrId': "$attrId", 'encoding': "$encoding", 'value': "$value"]
 
-  map.remove('value')
-  map.remove('encoding')
-  map.remove('attrId')
-  map += ['attrs' : list ]
+	map.remove('value')
+	map.remove('encoding')
+	map.remove('attrId')
+	map += ['attrs' : list ]
 }
 
 def flipHexStringEndianness(s)
 {
-  s = s.reverse()
-  def sb = new StringBuilder()
-  for (int i=0; i < s.length() -1; i+=2)
-   sb.append(s.charAt(i+1)).append(s.charAt(i))
-  sb
+	s = s.reverse()
+	def sb = new StringBuilder()
+	for (int i=0; i < s.length() -1; i+=2)
+		sb.append(s.charAt(i+1)).append(s.charAt(i))
+	sb
 }
 
 def getDataLengthByType(t)
@@ -346,7 +344,7 @@ def getDataLengthByType(t)
 	 "2a":3,	"2b":4,	"2c":5,	"2d":6,	"2e":7,	"2f":8,	"30":1,	"31":2,	"38":2,	"39":4,	"40":8,	"e0":4,	"e1":4,	"e2":4,
 	 "e8":2,	"e9":2,	"ea":4,	"f0":8,	"f1":16]
 
-	// return number of hex chars if the type is not in the map,
+	// Return number of hex chars. If the type is not in the map,
     // then it's likely a malformed msg and should not be parsed
     return (map.get(t) ?: 256) * 2
 }
@@ -420,15 +418,13 @@ def adjustSetpoint(value)
     def modeData = 0x02
 
     if ("heat" == mode || "heat" == runningMode)
-    		modeData = "00"
+		modeData = "00"
     else if ("cool" == mode || "cool" == runningMode)
-    	modeData = "01"
+		modeData = "01"
 
     def amountData = String.format("%02X", value)[-2..-1]
 
-
 	"st cmd 0x${device.deviceNetworkId} 1 0x201 0 {" + modeData + " " + amountData + "}"
-
 }
 
 
@@ -436,13 +432,11 @@ def getDisplayTemperature(value)
 {
 	def t = Integer.parseInt("$value", 16);
 
-
 	if (getTemperatureScale() == "C") {
 		t = (((t + 4) / 10) as Integer) / 10;
 	} else {
 		t = ((10 *celsiusToFahrenheit(t/100)) as Integer)/ 10;
 	}
-
 
 	return t;
 }
@@ -452,32 +446,32 @@ def updateHoldLabel(attr, value)
 	def currentHold = (device?.currentState("setpointHold")?.value)?: "..."
 
     def holdExp = device?.currentState("holdExpiary")?.value
-		holdExp = holdExp?: "${(new Date()).getTime()}"
+	holdExp = holdExp?: "${(new Date()).getTime()}"
 
 	if ("Hold" == attr)
     {
     	currentHold = value
     }
 
-	    if ("HoldExp" == attr)
-		{
-			holdExp = value
-		}
-		boolean past = ( (new Date(holdExp.toLong()).getTime())  < (new Date().getTime()))
+	if ("HoldExp" == attr)
+	{
+		holdExp = value
+	}
+	boolean past = ( (new Date(holdExp.toLong()).getTime())  < (new Date().getTime()))
 
-		if ("HoldExp" == attr)
-		{
-  			if (!past)
-				currentHold = "On"
-            else
-				currentHold = "Off"
-    }
+	if ("HoldExp" == attr)
+	{
+		if (!past)
+			currentHold = "On"
+		else
+			currentHold = "Off"
+	}
 
 	def holdString = (currentHold == "On")?
 			( (past)? "Is On" : "Ends ${compareWithNow(holdExp.toLong())}") :
 			((currentHold == "Off")? " is Off" : " ...")
 
-    sendEvent("name":"setpointHoldDisplay", "value": "Hold ${holdString}")
+	sendEvent("name":"setpointHoldDisplay", "value": "Hold ${holdString}")
 }
 
 def getSetPointHoldDuration()
@@ -495,22 +489,17 @@ def getSetPointHoldDuration()
 
     def currentHoldDuration = device.currentState("setpointHoldDuration")?.value
 
-
     if (Short.parseShort('0'+ (currentHoldDuration?: 0)) != (holdTime * 60))
     {
     	[
         	"st wattr 0x${device.deviceNetworkId} 1 0x201 0x24 0x21 {" +
-            String.format("%04X", ((holdTime * 60) as Short))  // switch to zigbee endian
-
-            + "}", "delay 100",
+	            String.format("%04X", ((holdTime * 60) as Short))  // switch to zigbee endian
+		        + "}", "delay 100",
 			"st rattr 0x${device.deviceNetworkId} 1 0x201 0x24", "delay 200",
 		]
-
-    } else
-    {
+    } else {
     	[]
     }
-
 }
 
 def Hold()
@@ -525,10 +514,9 @@ def Hold()
 	// set the duration first if it's changed
 
     [
-    "st wattr 0x${device.deviceNetworkId} 1 0x201 0x23 0x30 {$next}", "delay 100" ,
-
-    "raw 0x201 {04 21 11 00 00 05 00 }","delay 200",      // hold expiry time
-  	"send 0x${device.deviceNetworkId} 1 1", "delay 1500",
+		"st wattr 0x${device.deviceNetworkId} 1 0x201 0x23 0x30 {$next}", "delay 100" ,
+			"raw 0x201 {04 21 11 00 00 05 00 }","delay 200",      // hold expiry time
+			"send 0x${device.deviceNetworkId} 1 1", "delay 1500",
     ] + getSetPointHoldDuration()
 }
 
@@ -550,15 +538,13 @@ def compareWithNow(d)
 	// minutes
 	if (mins < 60)
 	{
-			ret +=  (mins as Integer) + " min" + ((mins > 1)? 's' : '')
-	}else if (mins < 1440)
-	{
+		ret +=  (mins as Integer) + " min" + ((mins > 1)? 's' : '')
+	} else if (mins < 1440)	{
 		t = ( Math.round((14 + mins)/30) as Integer) / 2
-        ret += t + " hr" +  ((t > 1)? 's' : '')
-	} else
-    {
+		ret += t + " hr" +  ((t > 1)? 's' : '')
+	} else {
 		t = (Math.round((359 + mins)/720) as Integer) / 2
-        ret +=  t + " day" + ((t > 1)? 's' : '')
+		ret +=  t + " day" + ((t > 1)? 's' : '')
 	}
     ret += (past)? " ago": ""
 
@@ -593,7 +579,6 @@ def Program()
 	def nextSched = getProgrammingMap()[next & 0x01]
 
     "st wattr 0x${device.deviceNetworkId} 1 0x201 0x25 0x18 {$next}"
-
 }
 
 
@@ -601,7 +586,8 @@ def getThermostatOperatingState(value)
 {
 	String[] m = [ "heating", "cooling", "fan", "Heat2", "Cool2", "Fan2", "Fan3"]
 	String desc = 'idle'
-		value = Integer.parseInt(''+value, 16)
+
+	value = Integer.parseInt(''+value, 16)
 
 		// only check for 1-stage  for A1730
 	for ( i in 0..2 ) {
@@ -619,19 +605,18 @@ def checkLastTimeSync(delay)
     	lastSync = "${new Date(0)}"
 
     if (settings.sync_clock ?: false && lastSync != new Date(0))
-    	{
-        	sendEvent("name":"lastTimeSync", "value":"${new Date(0)}")
-    	}
-
+	{
+		sendEvent("name":"lastTimeSync", "value":"${new Date(0)}")
+	}
 
 	long duration = (new Date()).getTime() - (new Date(lastSync)).getTime()
 
   //  log.debug "check Time: $lastSync duration: ${duration} settings.sync_clock: ${settings.sync_clock}"
 	if (duration > 86400000)
-		{
-			sendEvent("name":"lastTimeSync", "value":"${new Date()}")
-			return setThermostatTime()
-		}
+	{
+		sendEvent("name":"lastTimeSync", "value":"${new Date()}")
+		return setThermostatTime()
+	}
 
 	return []
 }
@@ -641,7 +626,7 @@ def readAttributesCommand(cluster, attribList)
 	def attrString = ''
 
 	for ( val in attribList ) {
-    attrString += ' ' + String.format("%02X %02X", val & 0xff , (val >> 8) & 0xff)
+		attrString += ' ' + String.format("%02X %02X", val & 0xff , (val >> 8) & 0xff)
 	}
 
 	//log.trace "list: " + attrString
@@ -677,7 +662,7 @@ def poll() {
 def getTemperature(value) {
 	def celsius = Integer.parseInt("$value", 16) / 100
 
-	if(getTemperatureScale() == "C"){
+	if(getTemperatureScale() == "C") {
 		return celsius as Integer
 	} else {
 		return celsiusToFahrenheit(celsius) as Integer
@@ -686,19 +671,22 @@ def getTemperature(value) {
 
 def setHeatingSetpoint(degrees) {
 	def temperatureScale = getTemperatureScale()
-
 	def degreesInteger = degrees as Integer
+
 	sendEvent("name":"heatingSetpoint", "value":degreesInteger, "unit":temperatureScale)
 
 	def celsius = (getTemperatureScale() == "C") ? degreesInteger : (fahrenheitToCelsius(degreesInteger) as Double).round(2)
-	"st wattr 0x${device.deviceNetworkId} 1 0x201 0x12 0x29 {" + hex(celsius*100) + "}"
 
+	"st wattr 0x${device.deviceNetworkId} 1 0x201 0x12 0x29 {" + hex(celsius*100) + "}"
 }
 
 def setCoolingSetpoint(degrees) {
 	def degreesInteger = degrees as Integer
+
 	sendEvent("name":"coolingSetpoint", "value":degreesInteger, "unit":temperatureScale)
+
 	def celsius = (getTemperatureScale() == "C") ? degreesInteger : (fahrenheitToCelsius(degreesInteger) as Double).round(2)
+
 	"st wattr 0x${device.deviceNetworkId} 1 0x201 0x11 0x29 {" + hex(celsius*100) + "}"
 
 }
@@ -721,7 +709,9 @@ def setThermostatFanMode() {
 			returnCommand = fanAuto()
 			break
 	}
-	if (!currentFanMode) { returnCommand = fanAuto() }
+	if (!currentFanMode) { 
+		returnCommand = fanAuto()
+	}
 	returnCommand
 }
 
@@ -796,7 +786,6 @@ def getLockMap()
   "03":"Full",
   "04":"Full",
   "05":"Full",
-
 ]}
 
 def lock()
@@ -820,8 +809,8 @@ def setThermostatTime()
 
 	if ((settings.sync_clock ?: false))
     {
-      log.debug "sync time is disabled, leaving"
-      return []
+		log.debug "sync time is disabled, leaving"
+		return []
     }
 
   	Date date = new Date();
