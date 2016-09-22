@@ -48,9 +48,9 @@ preferences {
 }
 
 def installed() {
-    log.debug "Entering installed()"
+    log.info "Entering installed()"
     initialize()
-    log.debug "Running astroCheck() once"
+    log.info "Running astroCheck() once"
     astroCheck()
     subscribe(doorContact, "contact", doorOpened)
     subscribe(location, "sunset", sunsetHandler)
@@ -58,12 +58,11 @@ def installed() {
 }
 
 def updated() {
-    log.debug "Entering updated()"
-    initialize()
+    log.info "Entering updated()"
 }
 
 def initialize() {
-    log.debug "Entering initialize()"
+    log.info "Entering initialize()"
     state.NotificationCount = 0
     scheduleAstroCheck()
 }
@@ -79,16 +78,16 @@ def sunriseHandler(evt) {
 }
 
 def scheduleAstroCheck() {
-    log.debug "Entering scheduleAstroCheck()"
+    log.info "Entering scheduleAstroCheck()"
     def min = Math.round(Math.floor(Math.random() * 60))
     def exp = "0 $min * * * ?"
-    log.debug "scheduleAstroCheck: $exp"
+    log.trace "scheduleAstroCheck: $exp"
     unschedule (astroCheck)
     schedule(exp, astroCheck) // check every hour since location can change without event?
 }
 
 def astroCheck() {
-    log.debug "Entering astroCheck()"
+    log.info "Entering astroCheck()"
     def s = getSunriseAndSunset(zipCode: zipCode, sunriseOffset: sunriseOffset, sunsetOffset: sunsetOffset)
     def sunsetTime = s.sunset
     def sunriseTime = s.sunrise
@@ -108,7 +107,7 @@ def astroCheck() {
         // If sunset time is after now (we haven't hit sunset yet)...
         //
         if (sunsetTime.after(now)) {
-            log.debug "Scheduling sunset handler to run at $sunsetTime"
+            log.trace "Scheduling sunset handler to run at $sunsetTime"
             runOnce(sunsetTime, doorChecker)
         }
     }
@@ -124,25 +123,26 @@ def astroCheck() {
     } else {
         state.isNightTime = true
     }
-    log.debug "Current isNightTime = $state.isNightTime"
+    log.info "Current isNightTime = $state.isNightTime"
 }
 
 def doorChecker() {
     //
     // Sunset just occured or the door was opened
     //
-    log.debug "Entering doorChecker()"
+    log.info "Entering doorChecker()"
     def now = new Date()
     if (state.isNightTime) {
-        log.debug "After sunset; Checking garage door"
+        log.info "After sunset; Checking garage door"
         def Gdoor = checkGarage()
-        log.debug "Door is $Gdoor"
+        log.info "Door is $Gdoor"
         if (Gdoor == "open") {
             state.NotificationCount = state.NotificationCount + 1
             if (state.NotificationCount > notificationCount) {
-                log.debug "Notified enough times. Closing door"
+                log.info "Notified enough times. Closing door"
                 state.NotificationCount = 0
-                send("Closing door now: $theDoor.name")
+                log.debug "Closing door now: $theDoor.name"
+                send ("Closing door now: $theDoor.name")
                 theDoor.close()
                 unschedule("doorChecker")
             } else {
@@ -151,36 +151,36 @@ def doorChecker() {
                 scheduledoorChecker()
             }
         } else {
-            log.debug "Door is now closed - stop monitoring door"
+            log.info "Door is now closed - stop monitoring door"
             state.NotificationCount = 0
             unschedule("doorChecker")
         }
     } else {
-        log.debug "It's daytime!! Stop checking door"
+        log.trace "It's daytime!! Stop checking door"
         unschedule("doorChecker")
     }
 }
 
 def doorOpened(evt) {
     // Callback when door opened or closed
-    log.debug "Entering doorChanged($evt.value)"
+    log.info "Entering doorChanged($evt.value)"
     if (evt.value == "open") {
-        log.debug "Door opened"
+        log.trace "Door opened"
         if (state.isNightTime) {
-            log.debug "Between sunset and sunrise; scheduling watcher"
+            log.trace "Between sunset and sunrise; scheduling watcher"
             scheduledoorChecker()
         }
     } else {
-        log.debug "Door closed -- descheduling callbacks"
+        log.trace "Door closed -- descheduling callbacks"
         state.NotificationCount = 0
         unschedule ("doorChecker")
     }
 }
 
 def scheduledoorChecker() {
-    log.debug "Entering scheduledoorChecker()"
+    log.info "Entering scheduledoorChecker()"
     def exp = now() + (60000 * notificationDelay)
-    log.debug "schedule Door Check time: $exp"
+    log.info "schedule Door Check time: $exp"
     unschedule("doorChecker")
     schedule(exp, doorChecker)
 }
