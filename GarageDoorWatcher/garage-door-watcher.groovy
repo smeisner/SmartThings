@@ -52,7 +52,7 @@ def installed() {
     initialize()
     log.info "Running astroCheck() once"
     astroCheck()
-    subscribe(doorContact, "contact", doorOpened)
+    subscribe(doorContact, "contact", doorChanged)
     subscribe(location, "sunset", sunsetHandler)
     subscribe(location, "sunrise", sunriseHandler)
 }
@@ -147,11 +147,13 @@ def doorChecker() {
             state.NotificationCount = state.NotificationCount + 1
             if (state.NotificationCount > notificationCount) {
                 log.info "Notified enough times. Closing door"
+                unsubscribe(doorContact)
                 state.NotificationCount = 0
                 log.debug "Closing door now: $theDoor.name"
                 send ("Closing door now: $theDoor.name")
                 theDoor.close()
                 unschedule("doorChecker")
+                subscribe(doorContact, "contact", doorChanged)
             } else {
                 log.debug "Notifying user and deferring"
                 send(message)
@@ -168,7 +170,7 @@ def doorChecker() {
     }
 }
 
-def doorOpened(evt) {
+def doorChanged(evt) {
     // Callback when door opened or closed
     log.info "Entering doorChanged($evt.value)"
     if (evt.value == "open") {
