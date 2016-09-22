@@ -101,7 +101,14 @@ def astroCheck() {
         //
         state.sunsetTime = sunsetTime.time
 
-        unschedule("doorChecker")
+        //
+        // Are we in the "notify and defer" mode? If so (where notification
+        // count is > 0), do not unschedule doorchecker.
+        //
+        if (state.NotificationCount == 0) {
+            log.trace "Descheduling door checker (NotificationCount = 0)"
+            unschedule("doorChecker")
+        }
 
         //
         // If sunset time is after now (we haven't hit sunset yet)...
